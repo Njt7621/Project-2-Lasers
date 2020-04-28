@@ -1,5 +1,6 @@
 package lasers.backtracking;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -53,7 +54,7 @@ public class Backtracker {
      * @param config A valid configuration
      * @return A solution config, or Optional.empty() if no solution
      */
-    public Optional<Configuration> solve(Configuration config) {
+    public Optional<Configuration> solve(Configuration config) throws FileNotFoundException {
         debugPrint("Current config", config);
         if (config.isGoal()) {
             debugPrint("\tGoal config", config);
@@ -82,7 +83,7 @@ public class Backtracker {
      * @return a list of configurations to get to a goal configuration.
      * If there are none, return null.
      */
-    public List<Configuration> solveWithPath(Configuration current) {
+    public List<Configuration> solveWithPath(Configuration current) throws FileNotFoundException {
         debugPrint("Current config", current);
         if (current.isGoal()) {
             debugPrint("\tGoal config", current);

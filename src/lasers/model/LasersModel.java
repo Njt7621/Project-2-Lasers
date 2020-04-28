@@ -19,7 +19,6 @@ public class LasersModel {
     private final static char EMPTY = '.';
     private final static char PILLAR = 'X';
     private char[][] board;
-    private int DIM;
     private int row;
     private int col;
     /** the laser command */
@@ -35,13 +34,10 @@ public class LasersModel {
      * @param filename the name of the file with the numbers
      * @throws FileNotFoundException if the file cannot be found
      */
-    public LasersModel(String filename) throws FileNotFoundException {
+    public LasersModel(String filename) throws FileNotFoundException, NullPointerException {
         this.observers = new LinkedList<>();
         Scanner in = new Scanner(new File(filename));
         // read the square dimension of the board
-//        String[] line = in.nextLine().split(" ");
-//        this.row = Integer.parseInt(line[0]);
-//        this.col = Integer.parseInt(line[1]);
         this.row = in.nextInt();
         this.col = in.nextInt();
         // create the board

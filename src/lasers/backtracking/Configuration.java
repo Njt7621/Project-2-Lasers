@@ -1,5 +1,6 @@
 package lasers.backtracking;
 
+import java.io.FileNotFoundException;
 import java.util.Collection;
 
 /**
@@ -16,7 +17,7 @@ public interface Configuration {
      *
      * @return All successors, valid and invalid
      */
-    public Collection< Configuration > getSuccessors();
+    public Collection< Configuration > getSuccessors() throws FileNotFoundException;
 
     /**
      * Is the current configuration valid or not?
