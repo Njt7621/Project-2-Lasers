@@ -72,10 +72,10 @@ public class SafeConfig implements Configuration {
                     board[n][j] = in.next().charAt(0);
                 }
             }
-            // close the scanner/file
-            in.close();
             this.cursorRow = 0;
             this.cursorCol = -1;
+            // close the scanner/file
+            in.close();
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -102,7 +102,7 @@ public class SafeConfig implements Configuration {
 
         }
         // add laser and its beams to the board
-        //addLaser(this.row, this.col);
+        addLaser(cursorRow, cursorCol);
 
     }
 
@@ -186,7 +186,6 @@ public class SafeConfig implements Configuration {
         }
         //add laser successor
         SafeConfig laserConfig = new SafeConfig(this);
-        laserConfig.addLaser(cursorRow, cursorCol);
         successors.add(laserConfig);
         //add empty tile successor
         SafeConfig emptyConfig = new SafeConfig(this);
@@ -207,44 +206,12 @@ public class SafeConfig implements Configuration {
                     }
                     return true;
                 }
-                //Any pillar that is numbered must have exactly that number of lasers placed in the directly adjacent cardinal directions (N/S/E/W).                if(board[r][c] == '0') {
-                if (board[r][c] == '0') {
-                    int returnedCounter = verifyPillar(r, c);
-                    if (returnedCounter != 0) {
-                        return false;
-                    }
-                }
-                if (board[r][c] == '1') {
-                    int returnedCounter = verifyPillar(r, c);
-                    if (returnedCounter != 1) {
-                        return false;
-                    }
-                }
-                if (board[r][c] == '2') {
-                    int returnedCounter = verifyPillar(r, c);
-                    if (returnedCounter != 2) {
-                        return false;
-                    }
-                }
-                if (board[r][c] == '3') {
-                    int returnedCounter = verifyPillar(r, c);
-                    if (returnedCounter != 3) {
-                        return false;
-                    }
-                }
-                if (board[r][c] == '4') {
-                    int returnedCounter = verifyPillar(r, c);
-                    if (returnedCounter != 4) {
-                        return false;
-                    }
-                }
             }
         }
         return true;
     }
 
     public boolean verifyLaser ( int row, int col){
-
         // NORTH
         for (int r = row - 1; r >= 0; r--) {
             if (PILLARS.contains(board[r][col])) {   // at a pillar
@@ -334,9 +301,41 @@ public class SafeConfig implements Configuration {
     @Override
     public boolean isGoal () {
         for (int r = 0; r < this.row; ++r) {
-            for (int c = 0; c < this.col; ++c) {//All tiles must be "covered" by either a pillar, laser or laser beam.
-                if (board[r][c] == EMPTY ) {
+            for (int c = 0; c < this.col; ++c) {
+                //All tiles must be "covered" by either a pillar, laser or laser beam.
+                if (this.board[r][c] == EMPTY ) {
                     return false;
+                }
+                //Any pillar that is numbered must have exactly that number of lasers placed in the directly adjacent cardinal directions (N/S/E/W).                if(board[r][c] == '0') {
+                if (board[r][c] == '0') {
+                    int returnedCounter = verifyPillar(r, c);
+                    if (returnedCounter != 0) {
+                        return false;
+                    }
+                }
+                if (board[r][c] == '1') {
+                    int returnedCounter = verifyPillar(r, c);
+                    if (returnedCounter != 1) {
+                        return false;
+                    }
+                }
+                if (board[r][c] == '2') {
+                    int returnedCounter = verifyPillar(r, c);
+                    if (returnedCounter != 2) {
+                        return false;
+                    }
+                }
+                if (board[r][c] == '3') {
+                    int returnedCounter = verifyPillar(r, c);
+                    if (returnedCounter != 3) {
+                        return false;
+                    }
+                }
+                if (board[r][c] == '4') {
+                    int returnedCounter = verifyPillar(r, c);
+                    if (returnedCounter != 4) {
+                        return false;
+                    }
                 }
                 return true;
             }
