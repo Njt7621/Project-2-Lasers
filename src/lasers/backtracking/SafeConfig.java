@@ -86,9 +86,6 @@ public class SafeConfig implements Configuration {
             System.arraycopy(other.board[j], 0, this.board[j], 0, this.row);
 
         }
-        // add laser and its beams to the board
-        addLaser(cursorRow, cursorCol);
-
     }
 
     /**
@@ -99,7 +96,6 @@ public class SafeConfig implements Configuration {
      */
     public void addLaser(int row, int col) {
         if(board[row][col] != EMPTY && board[row][col] != LASER_BEAM) {
-            System.out.println("ERROR adding laser at: (" + row + ", " + col + ")");
             return ;
         }
             this.board[row][col] = LASER;
@@ -155,11 +151,12 @@ public class SafeConfig implements Configuration {
 
         if(cursorCol == this.col){
             cursorRow++;
-            cursorCol = 0;
+            cursorCol --;
         }
         if(cursorRow == this.row){
             return successors;
         }
+
         //Each tile that isn't a pillar can be populated with two successors
         if (PILLARS.contains(board[cursorRow][cursorCol]) || this.board[cursorRow][cursorCol] == PILLAR) {   // at a pillar
             SafeConfig pillarConfig = new SafeConfig(this);
@@ -167,11 +164,17 @@ public class SafeConfig implements Configuration {
             return successors;
         }
         SafeConfig laserConfig = new SafeConfig(this);
+        // add laser and its beams to the board
+        laserConfig.addLaser(laserConfig.cursorRow, laserConfig.cursorCol);
+        if(laserConfig.isValid()){
+            //add laser successor
+            successors.add(laserConfig);
+        }
         SafeConfig emptyConfig = new SafeConfig(this);
-        //add laser successor
-        successors.add(laserConfig);
-        //add empty tile successor
-        successors.add(emptyConfig);
+        if(emptyConfig.isValid()){
+            //add empty tile successor
+            successors.add(emptyConfig);
+        }
         return successors;
     }
 
@@ -183,37 +186,8 @@ public class SafeConfig implements Configuration {
                 //Two lasers may not shine beams directly into each other
                 if (board[r][c] == LASER) {
                     if (!verifyLaser(r, c)) {
-                        return false;
-                    }
-                }
-                //Any pillar that is numbered must have exactly that number of lasers placed in the directly adjacent cardinal directions (N/S/E/W).
-                else if (board[r][c] == '0') {
-                    int returnedCounter = verifyPillar(r, c);
-                    if (returnedCounter != 0) {
-                        return false;
-                    }
-                }
-                else if (board[r][c] == '1') {
-                    int returnedCounter = verifyPillar(r, c);
-                    if (returnedCounter != 1) {
-                        return false;
-                    }
-                }
-                else if (board[r][c] == '2') {
-                    int returnedCounter = verifyPillar(r, c);
-                    if (returnedCounter != 2) {
-                        return false;
-                    }
-                }
-                else if (board[r][c] == '3') {
-                    int returnedCounter = verifyPillar(r, c);
-                    if (returnedCounter != 3) {
-                        return false;
-                    }
-                }
-                else if (board[r][c] == '4') {
-                    int returnedCounter = verifyPillar(r, c);
-                    if (returnedCounter != 4) {
+                        this.cursorRow = r;
+                        this.cursorCol = c;
                         return false;
                     }
                 }
@@ -311,39 +285,38 @@ public class SafeConfig implements Configuration {
 
     @Override
     public boolean isGoal () {
-        int count = 0;
         for (int r = 0; r < this.row; ++r) {
             for (int c = 0; c < this.col; ++c) {
                 //All tiles must be "covered" by either a pillar, laser or laser beam.
                 if (this.board[r][c] == EMPTY ) {
-                    count++;
+                    return false;
                 }
                 //Any pillar that is numbered must have exactly that number of lasers placed in the directly adjacent cardinal directions (N/S/E/W).
-                else if (board[r][c] == '0') {
+                if (board[r][c] == '0') {
                     int returnedCounter = verifyPillar(r, c);
                     if (returnedCounter != 0) {
                         return false;
                     }
                 }
-                else if (board[r][c] == '1') {
+                if (board[r][c] == '1') {
                     int returnedCounter = verifyPillar(r, c);
                     if (returnedCounter != 1) {
                         return false;
                     }
                 }
-                else if (board[r][c] == '2') {
+                if (board[r][c] == '2') {
                     int returnedCounter = verifyPillar(r, c);
                     if (returnedCounter != 2) {
                         return false;
                     }
                 }
-                else if (board[r][c] == '3') {
+                if (board[r][c] == '3') {
                     int returnedCounter = verifyPillar(r, c);
                     if (returnedCounter != 3) {
                         return false;
                     }
                 }
-                else if (board[r][c] == '4') {
+                if (board[r][c] == '4') {
                     int returnedCounter = verifyPillar(r, c);
                     if (returnedCounter != 4) {
                         return false;
@@ -351,7 +324,7 @@ public class SafeConfig implements Configuration {
                 }
             }
         }
-        return count <= 0;
+        return true;
     }
 
     /**
