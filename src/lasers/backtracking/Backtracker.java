@@ -19,6 +19,8 @@ import java.util.Optional;
 public class Backtracker {
 
     private boolean debug;
+    /** Path to be returned by solveWithPath **/
+    private List<Configuration> path = new ArrayList<>();
 
     /**
      * Initialize a new backtracker.
@@ -81,7 +83,20 @@ public class Backtracker {
      * If there are none, return null.
      */
     public List<Configuration> solveWithPath(Configuration current) {
-        // TODO
-        return new ArrayList<>();  // change this
+        debugPrint("Current config", current);
+        if (current.isGoal()) {
+            debugPrint("\tGoal config", current);
+            path.add(current);
+            return path;
+        } else{
+            for(Configuration child : current.getSuccessors()) {
+                if (child.isValid()){
+                    path = solveWithPath(child);
+                    if (path != null) {
+                        return path;
+                    }
+                } //return null;
+            } return null;
+        }
     }
 }
