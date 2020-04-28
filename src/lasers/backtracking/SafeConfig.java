@@ -1,5 +1,7 @@
 package lasers.backtracking;
 
+import lasers.model.LasersModel;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
@@ -17,38 +19,67 @@ import java.util.*;
  * @author YOUR NAME HERE
  */
 public class SafeConfig implements Configuration {
+    /**
+     * The UI's connection to the model
+     */
+    private LasersModel model;
+    /**
+     * the empty tile
+     */
     private final static char EMPTY = '.';
+    /**
+     * the pillar value
+     */
     private final static char PILLAR = 'X';
-    /** the laser command */
+    /**
+     * the laser command character
+     */
     public final static char LASER = 'L';
-    /** the laser beam command */
+    /**
+     * the laser beam character
+     */
     public final static char LASER_BEAM = '*';
+
     private char[][] board;
     private int row;
     private int col;
-    /** use for pillars **/
+
+    private int cursorRow;
+    private int cursorCol;
+
+    /**
+     * use for pillars
+     **/
     public final static List<Character> PILLARS = new ArrayList<Character>(Arrays.asList('0', '1', '2', '3', '4', 'X'));
 
 
     public SafeConfig(String filename) throws FileNotFoundException {
-        // create a scanner tied to the input file
-        Scanner in = new Scanner(new File(filename));
-        // read the square dimension of the board
-        this.row = in.nextInt();
-        this.col = in.nextInt();
-        // create the board
-        this.board = new char[row][col];
+        try {
+            // create a scanner tied to the input file
+            Scanner in = new Scanner(new File(filename));
+            // read the square dimension of the board
+            int row = in.nextInt();
+            int col = in.nextInt();
+            this.row = row;
+            this.col = col;
+            // create the board
+            this.board = new char[row][col];
 
-        // loop to fill in the board with info
-        for (int n=0; n<this.row; n++) {
-            for (int j=0; j<this.col; j++) {
-                // if it is not a dot, store the value
-                board[n][j] = in.next().charAt(0);
+            // loop to fill in the board with info
+            for (int n = 0; n < this.row; n++) {
+                for (int j = 0; j < this.col; j++) {
+                    // if it is not a dot, store the value
+                    board[n][j] = in.next().charAt(0);
+                }
             }
-        }
+            // close the scanner/file
+            in.close();
+            this.cursorRow = 0;
+            this.cursorCol = -1;
 
-        // close the scanner/file
-        in.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -56,34 +87,82 @@ public class SafeConfig implements Configuration {
      *
      * @param other the config to copy from
      */
-    private SafeConfig(SafeConfig other, int row, int col) {
+    private SafeConfig(SafeConfig other) {
         // copy over dimension
         this.row = other.row;
         this.col = other.col;
+        //copy over cursor
+        this.cursorRow = other.cursorRow;
+        this.cursorCol = other.cursorCol;
         // create the new board
         this.board = new char[other.row][other.col];
         // copy over the rows from the old board to the new one
-        for (int r=0; r<this.row; r++) {
+        for (int r = 0; r < this.row; r++) {
             System.arraycopy(other.board[r], 0, this.board[r], 0, this.row);
 
         }
-        for(int r = 0; r < this.row; ++r) {
-            for (int c = 0; c < this.col; ++c) {
-                //Two lasers may not shine beams directly into each other
-                if(board[r][c] == LASER) {
-                    if (!verifyLaser(r, c)) {
-                        System.out.println("ERROR verifying at: (" + r + ", " + c + ")");
-                        return ;
-                    }
-            }
+        // add laser and its beams to the board
+        //addLaser(this.row, this.col);
 
     }
 
     /**
+     * Overall Rules:
+     * - Laser beams can cross, but they cannot point at each other
+     * - LASER = [row][col]
+     * - LASER_BEAM:all 4 directions
+     */
+    public void addLaser(int row, int col) {
+        if (board[row][col] != EMPTY && board[row][col] != LASER_BEAM) {
+            System.out.println("ERROR adding laser at: (" + row + ", " + col + ")");
+            return;
+        }
+        this.board[row][col] = LASER;
+        // if (EMPTY == '.') {    //if dot add otherwise don't
+
+        // NORTH
+        for (int r = row - 1; r >= 0; r--) {
+            if (PILLARS.contains(board[r][col]) || board[r][col] == LASER) {   // at a pillar
+                break;
+            }
+
+            board[r][col] = LASER_BEAM;
+        }
+
+        // SOUTH
+        for (int r = row + 1; r < this.row; r++) {   // this.col = DIM
+            if (PILLARS.contains(board[r][col]) || board[r][col] == LASER) {   // at a pillar
+                break;
+            }
+
+            board[r][col] = LASER_BEAM;
+        }
+
+        // EAST
+        for (int c = col + 1; c < this.col; c++) {
+            if (PILLARS.contains(board[row][c]) || board[row][c] == LASER) {   // at a pillar
+                break;
+            }
+
+            board[row][c] = LASER_BEAM;
+        }
+
+        // WEST
+        for (int c = col - 1; c >= 0; c--) {
+            if (PILLARS.contains(board[row][c]) || board[row][c] == LASER) {   // at a pillar
+                break;
+            }
+
+            board[row][c] = LASER_BEAM;
+        }
+    }
+
+    /**
      * Returns the two-dimensional char array that represents the Board
+     *
      * @return char[][]
      */
-    public char[][] getBoard(){
+    public char[][] getBoard() {
         return this.board;
     }
 
@@ -91,23 +170,177 @@ public class SafeConfig implements Configuration {
     public Collection<Configuration> getSuccessors() {
         // create empty collection of successors
         List<Configuration> successors = new LinkedList<Configuration>();
-        for (int row=0; row<this.row; row++) {
-            // advance the cursor in the new child config to the next column
-            SafeConfig child = new SafeConfig(this, row, this.col+1);
-            successors.add(child);
+        if(cursorCol == col-1){
+            cursorRow++;
+            cursorCol = -1;
         }
+        if(cursorRow == row){
+            return successors;
+        }
+        cursorCol++;
+        //Each tile that isn't a pillar can be populated with two successors
+        if (PILLARS.contains(board[cursorRow][cursorCol]) || board[cursorRow][cursorCol] == PILLAR) {   // at a pillar
+            SafeConfig child = new SafeConfig(this);
+            successors.add(child);
+            return successors;
+        }
+        //add laser successor
+        SafeConfig laserConfig = new SafeConfig(this);
+        laserConfig.addLaser(cursorRow, cursorCol);
+        successors.add(laserConfig);
+        //add empty tile successor
+        SafeConfig emptyConfig = new SafeConfig(this);
+        successors.add(emptyConfig);
+
         return successors;
     }
 
     @Override
     public boolean isValid() {
-        // TODO
-        return false;
+        // step from left to right checking in all 3 directions
+        for (int r = 0; r < this.row; ++r) {
+            for (int c = 0; c < this.col; ++c) {
+                //Two lasers may not shine beams directly into each other
+                if (board[r][c] == LASER) {
+                    if (!verifyLaser(r, c)) {
+                        return false;
+                    }
+                    return true;
+                }
+                //Any pillar that is numbered must have exactly that number of lasers placed in the directly adjacent cardinal directions (N/S/E/W).                if(board[r][c] == '0') {
+                if (board[r][c] == '0') {
+                    int returnedCounter = verifyPillar(r, c);
+                    if (returnedCounter != 0) {
+                        return false;
+                    }
+                }
+                if (board[r][c] == '1') {
+                    int returnedCounter = verifyPillar(r, c);
+                    if (returnedCounter != 1) {
+                        return false;
+                    }
+                }
+                if (board[r][c] == '2') {
+                    int returnedCounter = verifyPillar(r, c);
+                    if (returnedCounter != 2) {
+                        return false;
+                    }
+                }
+                if (board[r][c] == '3') {
+                    int returnedCounter = verifyPillar(r, c);
+                    if (returnedCounter != 3) {
+                        return false;
+                    }
+                }
+                if (board[r][c] == '4') {
+                    int returnedCounter = verifyPillar(r, c);
+                    if (returnedCounter != 4) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
+    public boolean verifyLaser ( int row, int col){
+
+        // NORTH
+        for (int r = row - 1; r >= 0; r--) {
+            if (PILLARS.contains(board[r][col])) {   // at a pillar
+                break;
+            }
+            if (board[r][col] == LASER) {
+                return false;
+            }
+        }
+
+        // SOUTH
+        for (int r = row + 1; r < this.row; r++) {   // this.col = DIM
+            if (PILLARS.contains(board[r][col])) {   // at a pillar
+                break;
+            }
+
+            if (board[r][col] == LASER) {
+                return false;
+            }
+        }
+
+        // EAST
+        for (int c = col + 1; c < this.col; c++) {
+            if (PILLARS.contains(board[row][c])) {   // at a pillar
+                break;
+            }
+
+            if (board[row][c] == LASER) {
+                return false;
+            }
+        }
+
+        // WEST
+        for (int c = col - 1; c >= 0; c--) {
+            if (PILLARS.contains(board[row][c])) {   // at a pillar
+                break;
+            }
+
+            if (board[row][c] == LASER) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Purpose: To give restrictions as to how many lasers can be adjacent to certain pillars
+     * */
+    public int verifyPillar ( int row, int col){
+        // value x: any number
+        // other possible values: 0-4
+
+        // func check if char is a int or x, then = pillar, and break
+        // board[r][col] == 'X'
+        int counter = 0;
+
+
+        if (row > 0) { //NORTH
+            if (board[row - 1][col] == LASER) {
+                counter++;
+            }
+        }
+
+        if (row < this.row - 1) { //SOUTH
+            if (board[row + 1][col] == LASER) {
+                counter++;
+            }
+        }
+
+        if (col < this.col - 1) { //EAST
+            if (board[row][col + 1] == LASER) {
+                counter++;
+            }
+        }
+
+        if (col > 0) { //WEST
+            if (board[row][col - 1] == LASER) {
+                counter++;
+            }
+        }
+
+        return counter;
+    }
+
+
     @Override
-    public boolean isGoal() {
-        // TODO
+    public boolean isGoal () {
+        for (int r = 0; r < this.row; ++r) {
+            for (int c = 0; c < this.col; ++c) {//All tiles must be "covered" by either a pillar, laser or laser beam.
+                if (board[r][c] == EMPTY ) {
+                    return false;
+                }
+                return true;
+            }
+        }
         return false;
     }
 
@@ -115,42 +348,26 @@ public class SafeConfig implements Configuration {
      * Returns a string representation of the Safe
      * @return String
      */
-    public String toString(){
-        char[][] grid = this.makeCopy();
-        StringBuilder str = new StringBuilder("  ");
-        for (int col = 0; col < this.col; col++) {
-            if (col >= 10) {
-                int col2 = col;
-                while (col2 >= 10) {
-                    col2 -= 10;
-                }
-                str.append(col2).append(" ");
-            }
-            else {
-                str.append(col).append(" ");
-            }
+    public String toString () {
+        // build the column numbers
+        String returnString = "  ";
+        for (int col = 0; col < this.col; ++col) {
+            returnString += col;
         }
-        str.append("\n  ");
-        str.append("-".repeat(Math.max(0, ((this.col * 2) - 1))));
-        str.append("\n");
-        for (int i = 0; i < this.row; i++) {
-            if(i >= 10){
-                int row = i;
-                while(row >= 10){
-                    row -= 10;
-                }
-                str.append(row).append("|");
+
+        returnString += "\n";
+
+        // build the rows with number and values
+        for (int row = 0; row < this.row; ++row) {
+            String values = "";
+            for (int col = 0; col < this.col; ++col) {
+                values = values + (this.board[row][col]);
             }
-            else {
-                str.append(i).append("|");
-            }
-            for (int j = 0; j < this.col; j++) {
-                str.append(grid[j][i]).append(" ");
-            }
-            if(i != this.row-1) {
-                str.append("\n");
-            }
+            returnString += "\n";
+            returnString += "" + row + "|" + values;
+
         }
-        return str.toString();
+        return returnString;
     }
 }
+

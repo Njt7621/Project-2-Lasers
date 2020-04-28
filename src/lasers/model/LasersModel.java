@@ -344,4 +344,16 @@ public class LasersModel {
             observer.update(this, data);
         }
     }
+
+    public int getRow() {
+        return this.row;
+    }
+
+    public int getCol() {
+        return this.col;
+    }
+
+    public char getValue(int row, int col) {
+        return this.board[this.row][this.col];
+    }
 }
